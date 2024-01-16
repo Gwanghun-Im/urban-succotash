@@ -1,14 +1,36 @@
 // OS의 상단 바
-import React from "react";
+import * as Location from "expo-location";
+import React, { useEffect, useState } from "react";
 import { Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 export default function App() {
+  const [city, setCity] = useState("Loading....");
+  const [location, setLocation] = useState();
+  const [ok, setOk] = useState(true);
+  const ask = async () => {
+    const { granted } = await Location.requestForegroundPermissionsAsync();
+    if (!granted) {
+      setOk(false);
+    }
+    const {
+      coords: { latitude, longitude },
+    } = await Location.getCurrentPositionAsync({ accuracy: 5 });
+    const location = await Location.reverseGeocodeAsync(
+      { latitude, longitude },
+      { useGoogleMaps: false }
+    );
+    console.log(location);
+    setCity(location[0].city);
+  };
+  useEffect(() => {
+    ask();
+  }, []);
   return (
     <View style={style.container}>
       <View style={style.city}>
-        <Text style={style.cityName}>Seoul</Text>
+        <Text style={style.cityName}>{city}</Text>
       </View>
       <ScrollView
         horizontal

@@ -1,15 +1,24 @@
 // OS의 상단 바
 import * as Location from "expo-location";
 import React, { useEffect, useState } from "react";
-import { Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
+const API_KEY = "b6b9f81fafc2a905b6266380e8430e3c";
+
 export default function App() {
   const [city, setCity] = useState("Loading....");
-  const [location, setLocation] = useState();
+  const [days, setDays] = useState([]);
   const [ok, setOk] = useState(true);
-  const ask = async () => {
+  const getWeather = async () => {
     const { granted } = await Location.requestForegroundPermissionsAsync();
     if (!granted) {
       setOk(false);
@@ -21,11 +30,16 @@ export default function App() {
       { latitude, longitude },
       { useGoogleMaps: false }
     );
-    console.log(location);
     setCity(location[0].city);
+
+    const response = await fetch(
+      `https://api.openweathermap.org/data/2.5/onecall?lat=${latitude}&lon=${longitude}&exclude=alerts&appid=${API_KEY}&units=metric`
+    );
+    const json = await response.json();
+    setDays(json.daily);
   };
   useEffect(() => {
-    ask();
+    getWeather();
   }, []);
   return (
     <View style={style.container}>
@@ -38,18 +52,20 @@ export default function App() {
         showsHorizontalScrollIndicator="false"
         contentContainerStyle={style.weather}
       >
-        <View style={style.day}>
-          <Text style={style.temp}>27</Text>
-          <Text style={style.desc}>Sunny</Text>
-        </View>
-        <View style={style.day}>
-          <Text style={style.temp}>27</Text>
-          <Text style={style.desc}>Sunny</Text>
-        </View>
-        <View style={style.day}>
-          <Text style={style.temp}>27</Text>
-          <Text style={style.desc}>Sunny</Text>
-        </View>
+        {days.length === 0 ? (
+          <View style={style.day}>
+            <ActivityIndicator color={"white"} size={"large"} />
+          </View>
+        ) : (
+          days.map((day, index) => (
+            <View key={index} style={style.day}>
+              <Text style={style.temp}>
+                {parseFloat(day.temp.day).toFixed(1)}
+              </Text>
+              <Text style={style.desc}>{day.weather[0].main}</Text>
+            </View>
+          ))
+        )}
       </ScrollView>
     </View>
   );
